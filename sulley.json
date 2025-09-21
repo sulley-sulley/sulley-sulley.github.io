@@ -1,0 +1,3997 @@
+import React, { useState, useEffect, useRef } from 'react';
+
+const App = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [userRole, setUserRole] = useState(''); // 'admin' or 'worker'
+  const [activeTab, setActiveTab] = useState('dashboard'); // dashboard, stock, costs, users, reports, analytics
+  const [timeframe, setTimeframe] = useState('daily');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
+  const [activeChart, setActiveChart] = useState('sales');
+  
+  // State for business items with the requested products
+  const [items, setItems] = useState([
+    { id: 1, name: 'Flying Fish', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 2, name: 'Castle Lite', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 3, name: 'Safari', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 4, name: 'Kilimanjaro', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 5, name: 'Serengeti lemon', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 6, name: 'Wine(5litres)', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 7, name: 'Konyagi ndogo', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 8, name: 'Konyagi kati', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 9, name: 'Konyagi kubwa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 10, name: 'K-Vant', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 11, name: 'Smirnoff Orange', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 12, name: 'Master', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 13, name: 'Value', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 14, name: 'HansonChoice', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 15, name: 'Coca-cola chupa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 16, name: 'Pepsi chupa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 17, name: 'Tunda', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 18, name: 'Azam energy', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 19, name: 'Mo Extra', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 20, name: 'Mo Chungwa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 21, name: 'Mo Malt', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 22, name: 'Maji madogo', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 23, name: 'Maji Makubwa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 24, name: 'Pepsi portable', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 25, name: 'Mirinda Portable', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+  ]);
+  
+  // State for costs
+  const [costs, setCosts] = useState([
+    { id: 1, name: 'Electricity', amount: 0 },
+    { id: 2, name: 'Water Bills', amount: 0 },
+    { id: 3, name: 'Security', amount: 0 },
+    { id: 4, name: 'TV Charges', amount: 0 },
+    { id: 5, name: 'Other Emergency', amount: 0 },
+  ]);
+  
+  // State for new cost
+  const [newCostName, setNewCostAmountName] = useState('');
+  const [newCostAmount, setNewCostAmount] = useState('');
+  
+  // State for new stock item
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('');
+  const [newItemPurchasePrice, setNewItemPurchasePrice] = useState('');
+  const [newItemSellingPrice, setNewItemSellingPrice] = useState('');
+
+  // State for daily operations log (visible to admin)
+  const [dailyOperations, setDailyOperations] = useState([]);
+
+  // State for users management (admin only)
+  const [users, setUsers] = useState([
+    { id: 1, username: 'admin', password: 'admin123', role: 'admin', status: 'active' },
+    { id: 2, username: 'worker', password: 'worker123', role: 'worker', status: 'active' }
+  ]);
+  
+  // State for user editing
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUsername, setEditUsername] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [editRole, setEditRole] = useState('worker');
+
+  // State for new user registration
+  const [newUsername, setNewUsername] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('worker');
+
+  // State for report generation
+  const [reportStartDate, setReportStartDate] = useState('');
+  const [reportEndDate, setReportEndDate] = useState('');
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const reportRef = useRef();
+
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Calculate totals based on items and selected timeframe
+  const calculateTotals = () => {
+    let totalOpeningStock = 0;
+    let totalAdded = 0;
+    let totalSold = 0;
+    let totalClosingStock = 0;
+    let totalRevenue = 0;
+    let totalCosts = 0;
+    let totalPurchaseValue = 0;
+    let totalProfit = 0;
+    let expectedProfit = 0;
+
+    // Calculate item totals
+    items.forEach(item => {
+      totalOpeningStock += item.openingStock;
+      totalAdded += item.added;
+      totalSold += item.sold;
+      const closingStock = item.openingStock + item.added - item.sold;
+      totalClosingStock += Math.max(0, closingStock);
+      totalRevenue += (item.sold * item.sellingPrice);
+      totalPurchaseValue += (item.added * item.purchasePrice);
+      totalProfit += (item.sold * (item.sellingPrice - item.purchasePrice));
+      
+      // Calculate expected profit if all items sold
+      const totalItems = item.openingStock + item.added;
+      const remainingItems = totalItems - item.sold;
+      expectedProfit += remainingItems * (item.sellingPrice - item.purchasePrice);
+    });
+
+    // Calculate total costs
+    costs.forEach(cost => {
+      totalCosts += cost.amount;
+    });
+
+    // Adjust for timeframe (mock data adjustment)
+    if (timeframe === 'weekly') {
+      totalSold = Math.floor(totalSold * 7);
+      totalRevenue = totalRevenue * 7;
+      totalPurchaseValue = totalPurchaseValue * 7;
+      totalProfit = totalProfit * 7;
+      totalCosts = totalCosts * 7;
+      totalClosingStock = totalOpeningStock + totalAdded - totalSold;
+    } else if (timeframe === 'monthly') {
+      totalSold = Math.floor(totalSold * 30);
+      totalRevenue = totalRevenue * 30;
+      totalPurchaseValue = totalPurchaseValue * 30;
+      totalProfit = totalProfit * 30;
+      totalCosts = totalCosts * 30;
+      totalClosingStock = totalOpeningStock + totalAdded - totalSold;
+    } else if (timeframe === 'yearly') {
+      totalSold = Math.floor(totalSold * 365);
+      totalRevenue = totalRevenue * 365;
+      totalPurchaseValue = totalPurchaseValue * 365;
+      totalProfit = totalProfit * 365;
+      totalCosts = totalCosts * 365;
+      totalClosingStock = totalOpeningStock + totalAdded - totalSold;
+    }
+
+    const netProfit = totalProfit - totalCosts;
+
+    return {
+      totalOpeningStock,
+      totalAdded,
+      totalSold,
+      totalClosingStock,
+      totalRevenue,
+      totalCosts,
+      totalPurchaseValue,
+      totalProfit,
+      netProfit,
+      expectedProfit
+    };
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    
+    // Find user in users array
+    const user = users.find(u => u.username === username && u.password === password && u.status === 'active');
+    
+    if (user) {
+      setIsLoggedIn(true);
+      setUserRole(user.role);
+      setActiveTab('dashboard');
+    } else {
+      alert('Invalid credentials or inactive account.');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUsername('');
+    setPassword('');
+    setUserRole('');
+    setActiveTab('dashboard');
+  };
+
+  // Handle item changes
+  const handleItemChange = (id, field, value) => {
+    // Workers can only edit 'added', 'sold', and prices if not already edited
+    if (userRole === 'worker') {
+      const item = items.find(item => item.id === id);
+      
+      // Workers cannot edit openingStock or closingStock
+      if (field === 'openingStock' || field === 'closingStock') {
+        return;
+      }
+      
+      // Workers can only edit purchasePrice and sellingPrice once
+      if ((field === 'purchasePrice' || field === 'sellingPrice') && item.edited) {
+        alert('You can only edit prices once for this item.');
+        return;
+      }
+      
+      // Mark as edited if editing prices
+      if (field === 'purchasePrice' || field === 'sellingPrice') {
+        setItems(items.map(item => 
+          item.id === id ? { ...item, [field]: Number(value) || 0, edited: true } : item
+        ));
+        
+        // Log the operation
+        setDailyOperations([
+          ...dailyOperations,
+          {
+            id: dailyOperations.length + 1,
+            type: 'stock',
+            description: `Edited ${field} for ${item.name}`,
+            user: username,
+            timestamp: new Date().toLocaleString()
+          }
+        ]);
+        return;
+      }
+    }
+    
+    setItems(items.map(item => 
+      item.id === id ? { ...item, [field]: Number(value) || 0 } : item
+    ));
+    
+    // Log the operation for admin to see
+    if (userRole === 'worker') {
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'stock',
+          description: `Updated ${field} for item ID ${id}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+    }
+  };
+
+  // Add new cost
+  const addNewCost = () => {
+    if (newCostName.trim() && newCostAmount) {
+      const newCost = {
+        id: costs.length + 1,
+        name: newCostName.trim(),
+        amount: Number(newCostAmount) || 0
+      };
+      
+      setCosts([...costs, newCost]);
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'cost',
+          description: `Added cost: ${newCost.name} - ${formatTZS(newCost.amount)}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      setNewCostAmountName('');
+      setNewCostAmount('');
+    }
+  };
+
+  // Remove cost
+  const removeCost = (id) => {
+    const removedCost = costs.find(cost => cost.id === id);
+    if (removedCost) {
+      setCosts(costs.filter(cost => cost.id !== id));
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'cost',
+          description: `Removed cost: ${removedCost.name} - ${formatTZS(removedCost.amount)}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+    }
+  };
+
+  // Add new stock item
+  const addNewItem = () => {
+    if (newItemName.trim() && newItemQuantity && newItemPurchasePrice && newItemSellingPrice) {
+      const newItem = {
+        id: items.length + 1,
+        name: newItemName.trim(),
+        openingStock: 0,
+        added: Number(newItemQuantity) || 0,
+        sold: 0,
+        purchasePrice: Number(newItemPurchasePrice) || 0,
+        sellingPrice: Number(newItemSellingPrice) || 0,
+        edited: false
+      };
+      
+      setItems([...items, newItem]);
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'stock',
+          description: `Added new stock: ${newItem.name} - Quantity: ${newItem.added}, Total Purchase Price: ${formatTZS(newItem.purchasePrice * newItem.added)}, Expected Selling Price: ${formatTZS(newItem.sellingPrice)}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      // Reset form fields
+      setNewItemName('');
+      setNewItemQuantity('');
+      setNewItemPurchasePrice('');
+      setNewItemSellingPrice('');
+      
+      alert('New stock item added successfully!');
+    } else {
+      alert('Please fill in all fields: Item Name, Quantity, Total Purchase Price, and Expected Selling Price.');
+    }
+  };
+
+  // Start editing a user
+  const startEditingUser = (user) => {
+    setEditingUser(user);
+    setEditUsername(user.username);
+    setEditPassword(user.password);
+    setEditRole(user.role);
+  };
+
+  // Save edited user
+  const saveEditedUser = () => {
+    if (editUsername.trim() && editPassword.trim()) {
+      // Check if username is being changed and already exists
+      if (editUsername !== editingUser.username && users.some(user => user.username === editUsername.trim())) {
+        alert('Username already exists. Please choose another username.');
+        return;
+      }
+      
+      setUsers(users.map(user => 
+        user.id === editingUser.id 
+          ? { ...user, username: editUsername.trim(), password: editPassword.trim(), role: editRole }
+          : user
+      ));
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'user',
+          description: `Edited user: ${editingUser.username} -> ${editUsername.trim()}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      // Reset editing state
+      setEditingUser(null);
+      setEditUsername('');
+      setEditPassword('');
+      setEditRole('worker');
+      
+      alert('User updated successfully!');
+    } else {
+      alert('Please fill in all fields: Username and Password.');
+    }
+  };
+
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingUser(null);
+    setEditUsername('');
+    setEditPassword('');
+    setEditRole('worker');
+  };
+
+  // Register new user
+  const registerNewUser = () => {
+    if (newUsername.trim() && newUserPassword.trim()) {
+      // Check if username already exists
+      if (users.some(user => user.username === newUsername.trim())) {
+        alert('Username already exists. Please choose another username.');
+        return;
+      }
+      
+      const newUser = {
+        id: Math.max(...users.map(u => u.id)) + 1,
+        username: newUsername.trim(),
+        password: newUserPassword.trim(),
+        role: newUserRole,
+        status: 'active'
+      };
+      
+      setUsers([...users, newUser]);
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'user',
+          description: `Registered new user: ${newUser.username} (${newUser.role})`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      // Reset form fields
+      setNewUsername('');
+      setNewUserPassword('');
+      setNewUserRole('worker');
+      
+      alert('New user registered successfully!');
+    } else {
+      alert('Please fill in all fields: Username and Password.');
+    }
+  };
+
+  // Toggle user status (activate/deactivate)
+  const toggleUserStatus = (id) => {
+    const user = users.find(u => u.id === id);
+    if (user && user.username !== 'admin') {
+      setUsers(users.map(u => 
+        u.id === id ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u
+      ));
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'user',
+          description: `${user.status === 'active' ? 'Deactivated' : 'Activated'} user: ${user.username}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      alert(`${user.status === 'active' ? 'User deactivated' : 'User activated'} successfully!`);
+    } else if (user && user.username === 'admin') {
+      alert('Cannot deactivate the admin account.');
+    }
+  };
+
+  // Permanently delete user
+  const deleteUser = (id) => {
+    const user = users.find(u => u.id === id);
+    if (user && user.username !== 'admin') {
+      if (window.confirm(`Are you sure you want to permanently delete user: ${user.username}? This action cannot be undone.`)) {
+        setUsers(users.filter(u => u.id !== id));
+        
+        // Log the operation
+        setDailyOperations([
+          ...dailyOperations,
+          {
+            id: dailyOperations.length + 1,
+            type: 'user',
+            description: `Permanently deleted user: ${user.username}`,
+            user: username,
+            timestamp: new Date().toLocaleString()
+          }
+        ]);
+        
+        alert('User permanently deleted!');
+      }
+    } else if (user && user.username === 'admin') {
+      alert('Cannot delete the admin account.');
+    }
+  };
+
+  // Format Tanzania Shillings
+  const formatTZS = (amount) => {
+    return new Intl.NumberFormat('sw-TZ', {
+      style: 'currency',
+      currency: 'TZS',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Generate chart data for graphical analysis
+  const generateChartData = () => {
+    const totals = calculateTotals();
+    
+    // Top 5 selling items
+    const topSellingItems = [...items]
+      .filter(item => item.sold > 0)
+      .sort((a, b) => (b.sold * b.sellingPrice) - (a.sold * a.sellingPrice))
+      .slice(0, 5)
+      .map(item => ({
+        name: item.name,
+        sales: item.sold * item.sellingPrice,
+        quantity: item.sold,
+        profit: (item.sold * item.sellingPrice) - (item.sold * item.purchasePrice),
+        profitMargin: item.sellingPrice > 0 ? ((item.sellingPrice - item.purchasePrice) / item.sellingPrice * 100) : 0
+      }));
+    
+    // Inventory status
+    const inventoryData = items
+      .filter(item => item.openingStock > 0 || item.added > 0)
+      .map(item => ({
+        name: item.name,
+        sold: item.sold,
+        remaining: Math.max(0, item.openingStock + item.added - item.sold),
+        value: (item.openingStock + item.added - item.sold) * item.sellingPrice,
+        costValue: (item.openingStock + item.added - item.sold) * item.purchasePrice
+      }));
+    
+    // Profit by item
+    const profitData = items
+      .filter(item => item.sold > 0)
+      .map(item => ({
+        name: item.name,
+        profit: (item.sold * item.sellingPrice) - (item.sold * item.purchasePrice),
+        revenue: item.sold * item.sellingPrice,
+        cost: item.sold * item.purchasePrice
+      }));
+    
+    // Revenue vs```jsx
+import React, { useState, useEffect, useRef } from 'react';
+
+const App = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [userRole, setUserRole] = useState(''); // 'admin' or 'worker'
+  const [activeTab, setActiveTab] = useState('dashboard'); // dashboard, stock, costs, users, reports, analytics
+  const [timeframe, setTimeframe] = useState('daily');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
+  const [activeChart, setActiveChart] = useState('sales');
+  
+  // State for business items with the requested products
+  const [items, setItems] = useState([
+    { id: 1, name: 'Flying Fish', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 2, name: 'Castle Lite', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 3, name: 'Safari', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 4, name: 'Kilimanjaro', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 5, name: 'Serengeti lemon', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 6, name: 'Wine(5litres)', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 7, name: 'Konyagi ndogo', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 8, name: 'Konyagi kati', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 9, name: 'Konyagi kubwa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 10, name: 'K-Vant', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 11, name: 'Smirnoff Orange', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 12, name: 'Master', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 13, name: 'Value', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 14, name: 'HansonChoice', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 15, name: 'Coca-cola chupa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 16, name: 'Pepsi chupa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 17, name: 'Tunda', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 18, name: 'Azam energy', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 19, name: 'Mo Extra', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 20, name: 'Mo Chungwa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 21, name: 'Mo Malt', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 22, name: 'Maji madogo', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 23, name: 'Maji Makubwa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 24, name: 'Pepsi portable', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 25, name: 'Mirinda Portable', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+  ]);
+  
+  // State for costs
+  const [costs, setCosts] = useState([
+    { id: 1, name: 'Electricity', amount: 0 },
+    { id: 2, name: 'Water Bills', amount: 0 },
+    { id: 3, name: 'Security', amount: 0 },
+    { id: 4, name: 'TV Charges', amount: 0 },
+    { id: 5, name: 'Other Emergency', amount: 0 },
+  ]);
+  
+  // State for new cost
+  const [newCostName, setNewCostAmountName] = useState('');
+  const [newCostAmount, setNewCostAmount] = useState('');
+  
+  // State for new stock item
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('');
+  const [newItemPurchasePrice, setNewItemPurchasePrice] = useState('');
+  const [newItemSellingPrice, setNewItemSellingPrice] = useState('');
+
+  // State for daily operations log (visible to admin)
+  const [dailyOperations, setDailyOperations] = useState([]);
+
+  // State for users management (admin only)
+  const [users, setUsers] = useState([
+    { id: 1, username: 'admin', password: 'admin123', role: 'admin', status: 'active' },
+    { id: 2, username: 'worker', password: 'worker123', role: 'worker', status: 'active' }
+  ]);
+  
+  // State for user editing
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUsername, setEditUsername] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [editRole, setEditRole] = useState('worker');
+
+  // State for new user registration
+  const [newUsername, setNewUsername] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('worker');
+
+  // State for report generation
+  const [reportStartDate, setReportStartDate] = useState('');
+  const [reportEndDate, setReportEndDate] = useState('');
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const reportRef = useRef();
+
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Calculate totals based on items and selected timeframe
+  const calculateTotals = () => {
+    let totalOpeningStock = 0;
+    let totalAdded = 0;
+    let totalSold = 0;
+    let totalClosingStock = 0;
+    let totalRevenue = 0;
+    let totalCosts = 0;
+    let totalPurchaseValue = 0;
+    let totalProfit = 0;
+    let expectedProfit = 0;
+
+    // Calculate item totals
+    items.forEach(item => {
+      totalOpeningStock += item.openingStock;
+      totalAdded += item.added;
+      totalSold += item.sold;
+      const closingStock = item.openingStock + item.added - item.sold;
+      totalClosingStock += Math.max(0, closingStock);
+      totalRevenue += (item.sold * item.sellingPrice);
+      totalPurchaseValue += (item.added * item.purchasePrice);
+      totalProfit += (item.sold * (item.sellingPrice - item.purchasePrice));
+      
+      // Calculate expected profit if all items sold
+      const totalItems = item.openingStock + item.added;
+      const remainingItems = totalItems - item.sold;
+      expectedProfit += remainingItems * (item.sellingPrice - item.purchasePrice);
+    });
+
+    // Calculate total costs
+    costs.forEach(cost => {
+      totalCosts += cost.amount;
+    });
+
+    // Adjust for timeframe (mock data adjustment)
+    if (timeframe === 'weekly') {
+      totalSold = Math.floor(totalSold * 7);
+      totalRevenue = totalRevenue * 7;
+      totalPurchaseValue = totalPurchaseValue * 7;
+      totalProfit = totalProfit * 7;
+      totalCosts = totalCosts * 7;
+      totalClosingStock = totalOpeningStock + totalAdded - totalSold;
+    } else if (timeframe === 'monthly') {
+      totalSold = Math.floor(totalSold * 30);
+      totalRevenue = totalRevenue * 30;
+      totalPurchaseValue = totalPurchaseValue * 30;
+      totalProfit = totalProfit * 30;
+      totalCosts = totalCosts * 30;
+      totalClosingStock = totalOpeningStock + totalAdded - totalSold;
+    } else if (timeframe === 'yearly') {
+      totalSold = Math.floor(totalSold * 365);
+      totalRevenue = totalRevenue * 365;
+      totalPurchaseValue = totalPurchaseValue * 365;
+      totalProfit = totalProfit * 365;
+      totalCosts = totalCosts * 365;
+      totalClosingStock = totalOpeningStock + totalAdded - totalSold;
+    }
+
+    const netProfit = totalProfit - totalCosts;
+
+    return {
+      totalOpeningStock,
+      totalAdded,
+      totalSold,
+      totalClosingStock,
+      totalRevenue,
+      totalCosts,
+      totalPurchaseValue,
+      totalProfit,
+      netProfit,
+      expectedProfit
+    };
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    
+    // Find user in users array
+    const user = users.find(u => u.username === username && u.password === password && u.status === 'active');
+    
+    if (user) {
+      setIsLoggedIn(true);
+      setUserRole(user.role);
+      setActiveTab('dashboard');
+    } else {
+      alert('Invalid credentials or inactive account.');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUsername('');
+    setPassword('');
+    setUserRole('');
+    setActiveTab('dashboard');
+  };
+
+  // Handle item changes
+  const handleItemChange = (id, field, value) => {
+    // Workers can only edit 'added', 'sold', and prices if not already edited
+    if (userRole === 'worker') {
+      const item = items.find(item => item.id === id);
+      
+      // Workers cannot edit openingStock or closingStock
+      if (field === 'openingStock' || field === 'closingStock') {
+        return;
+      }
+      
+      // Workers can only edit purchasePrice and sellingPrice once
+      if ((field === 'purchasePrice' || field === 'sellingPrice') && item.edited) {
+        alert('You can only edit prices once for this item.');
+        return;
+      }
+      
+      // Mark as edited if editing prices
+      if (field === 'purchasePrice' || field === 'sellingPrice') {
+        setItems(items.map(item => 
+          item.id === id ? { ...item, [field]: Number(value) || 0, edited: true } : item
+        ));
+        
+        // Log the operation
+        setDailyOperations([
+          ...dailyOperations,
+          {
+            id: dailyOperations.length + 1,
+            type: 'stock',
+            description: `Edited ${field} for ${item.name}`,
+            user: username,
+            timestamp: new Date().toLocaleString()
+          }
+        ]);
+        return;
+      }
+    }
+    
+    setItems(items.map(item => 
+      item.id === id ? { ...item, [field]: Number(value) || 0 } : item
+    ));
+    
+    // Log the operation for admin to see
+    if (userRole === 'worker') {
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'stock',
+          description: `Updated ${field} for item ID ${id}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+    }
+  };
+
+  // Add new cost
+  const addNewCost = () => {
+    if (newCostName.trim() && newCostAmount) {
+      const newCost = {
+        id: costs.length + 1,
+        name: newCostName.trim(),
+        amount: Number(newCostAmount) || 0
+      };
+      
+      setCosts([...costs, newCost]);
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'cost',
+          description: `Added cost: ${newCost.name} - ${formatTZS(newCost.amount)}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      setNewCostAmountName('');
+      setNewCostAmount('');
+    }
+  };
+
+  // Remove cost
+  const removeCost = (id) => {
+    const removedCost = costs.find(cost => cost.id === id);
+    if (removedCost) {
+      setCosts(costs.filter(cost => cost.id !== id));
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'cost',
+          description: `Removed cost: ${removedCost.name} - ${formatTZS(removedCost.amount)}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+    }
+  };
+
+  // Add new stock item
+  const addNewItem = () => {
+    if (newItemName.trim() && newItemQuantity && newItemPurchasePrice && newItemSellingPrice) {
+      const newItem = {
+        id: items.length + 1,
+        name: newItemName.trim(),
+        openingStock: 0,
+        added: Number(newItemQuantity) || 0,
+        sold: 0,
+        purchasePrice: Number(newItemPurchasePrice) || 0,
+        sellingPrice: Number(newItemSellingPrice) || 0,
+        edited: false
+      };
+      
+      setItems([...items, newItem]);
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'stock',
+          description: `Added new stock: ${newItem.name} - Quantity: ${newItem.added}, Total Purchase Price: ${formatTZS(newItem.purchasePrice * newItem.added)}, Expected Selling Price: ${formatTZS(newItem.sellingPrice)}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      // Reset form fields
+      setNewItemName('');
+      setNewItemQuantity('');
+      setNewItemPurchasePrice('');
+      setNewItemSellingPrice('');
+      
+      alert('New stock item added successfully!');
+    } else {
+      alert('Please fill in all fields: Item Name, Quantity, Total Purchase Price, and Expected Selling Price.');
+    }
+  };
+
+  // Start editing a user
+  const startEditingUser = (user) => {
+    setEditingUser(user);
+    setEditUsername(user.username);
+    setEditPassword(user.password);
+    setEditRole(user.role);
+  };
+
+  // Save edited user
+  const saveEditedUser = () => {
+    if (editUsername.trim() && editPassword.trim()) {
+      // Check if username is being changed and already exists
+      if (editUsername !== editingUser.username && users.some(user => user.username === editUsername.trim())) {
+        alert('Username already exists. Please choose another username.');
+        return;
+      }
+      
+      setUsers(users.map(user => 
+        user.id === editingUser.id 
+          ? { ...user, username: editUsername.trim(), password: editPassword.trim(), role: editRole }
+          : user
+      ));
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'user',
+          description: `Edited user: ${editingUser.username} -> ${editUsername.trim()}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      // Reset editing state
+      setEditingUser(null);
+      setEditUsername('');
+      setEditPassword('');
+      setEditRole('worker');
+      
+      alert('User updated successfully!');
+    } else {
+      alert('Please fill in all fields: Username and Password.');
+    }
+  };
+
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingUser(null);
+    setEditUsername('');
+    setEditPassword('');
+    setEditRole('worker');
+  };
+
+  // Register new user
+  const registerNewUser = () => {
+    if (newUsername.trim() && newUserPassword.trim()) {
+      // Check if username already exists
+      if (users.some(user => user.username === newUsername.trim())) {
+        alert('Username already exists. Please choose another username.');
+        return;
+      }
+      
+      const newUser = {
+        id: Math.max(...users.map(u => u.id)) + 1,
+        username: newUsername.trim(),
+        password: newUserPassword.trim(),
+        role: newUserRole,
+        status: 'active'
+      };
+      
+      setUsers([...users, newUser]);
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'user',
+          description: `Registered new user: ${newUser.username} (${newUser.role})`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      // Reset form fields
+      setNewUsername('');
+      setNewUserPassword('');
+      setNewUserRole('worker');
+      
+      alert('New user registered successfully!');
+    } else {
+      alert('Please fill in all fields: Username and Password.');
+    }
+  };
+
+  // Toggle user status (activate/deactivate)
+  const toggleUserStatus = (id) => {
+    const user = users.find(u => u.id === id);
+    if (user && user.username !== 'admin') {
+      setUsers(users.map(u => 
+        u.id === id ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u
+      ));
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'user',
+          description: `${user.status === 'active' ? 'Deactivated' : 'Activated'} user: ${user.username}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      alert(`${user.status === 'active' ? 'User deactivated' : 'User activated'} successfully!`);
+    } else if (user && user.username === 'admin') {
+      alert('Cannot deactivate the admin account.');
+    }
+  };
+
+  // Permanently delete user
+  const deleteUser = (id) => {
+    const user = users.find(u => u.id === id);
+    if (user && user.username !== 'admin') {
+      if (window.confirm(`Are you sure you want to permanently delete user: ${user.username}? This action cannot be undone.`)) {
+        setUsers(users.filter(u => u.id !== id));
+        
+        // Log the operation
+        setDailyOperations([
+          ...dailyOperations,
+          {
+            id: dailyOperations.length + 1,
+            type: 'user',
+            description: `Permanently deleted user: ${user.username}`,
+            user: username,
+            timestamp: new Date().toLocaleString()
+          }
+        ]);
+        
+        alert('User permanently deleted!');
+      }
+    } else if (user && user.username === 'admin') {
+      alert('Cannot delete the admin account.');
+    }
+  };
+
+  // Format Tanzania Shillings
+  const formatTZS = (amount) => {
+    if (isNaN(amount)) return formatTZS(0);
+    return new Intl.NumberFormat('sw-TZ', {
+      style: 'currency',
+      currency: 'TZS',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Generate chart data for graphical analysis
+  const generateChartData = () => {
+    const totals = calculateTotals();
+    
+    // Top 5 selling items
+    const topSellingItems = [...items]
+      .filter(item => item.sold > 0)
+      .sort((a, b) => (b.sold * b.sellingPrice) - (a.sold * a.sellingPrice))
+      .slice(0, 5)
+      .map(item => ({
+        name: item.name,
+        sales: item.sold * item.sellingPrice,
+        quantity: item.sold,
+        profit: (item.sold * item.sellingPrice) - (item.sold * item.purchasePrice),
+        profitMargin: item.sellingPrice > 0 ? ((item.sellingPrice - item.purchasePrice) / item.sellingPrice * 100) : 0
+      }));
+    
+    // Inventory status
+    const inventoryData = items
+      .filter(item => item.openingStock > 0 || item.added > 0)
+      .map(item => ({
+        name: item.name,
+        sold: item.sold,
+        remaining: Math.max(0, item.openingStock + item.added - item.sold),
+        value: (item.openingStock + item.added - item.sold) * item.sellingPrice,
+        costValue: (item.openingStock + item.added - item.sold) * item.purchasePrice
+      }));
+    
+    // Profit by item
+    const profitData = items
+      .filter(item => item.sold > 0)
+      .map(item => ({
+        name: item.name,
+        profit: (item.sold * item.sellingPrice) - (item.sold * item.purchasePrice),
+        revenue: item.sold * item.sellingPrice,
+        cost: item.sold * item.purchasePrice
+      }));
+    
+    // Revenue vs Costs
+    const financialData = [
+      { name: 'Revenue', value: totals.totalRevenue },
+      { name: 'Purchase Costs', value: totals.totalPurchaseValue },
+      { name: 'Operational Costs', value: totals.totalCosts },
+      { name: 'Gross Profit', value: totals.totalProfit },
+      { name: 'Net Profit', value: totals.netProfit }
+    ];
+    
+    // Daily trend data (mock data for visualization)
+    const dailyTrendData = [
+      { day: 'Mon', sales: totals.totalRevenue * 0.8, profit: totals.netProfit * 0.8 },
+      { day: 'Tue', sales: totals.totalRevenue * 0.9, profit: totals.netProfit * 0.9 },
+      { day: 'Wed', sales: totals.totalRevenue * 1.1, profit: totals.netProfit * 1.1 },
+      { day: 'Thu', sales: totals.totalRevenue * 0.95, profit: totals.netProfit * 0.95 },
+      { day: 'Fri', sales: totals.totalRevenue * 1.2, profit: totals.netProfit * 1.2 },
+      { day: 'Sat', sales: totals.totalRevenue * 1.3, profit: totals.netProfit * 1.3 },
+      { day: 'Sun', sales: totals.totalRevenue * 0.7, profit: totals.netProfit * 0.7 }
+    ];
+    
+    // User activity data
+    const userActivityData = dailyOperations
+      .filter(op => op.type === 'stock' || op.type === 'cost')
+      .reduce((acc, op) => {
+        const user = op.user;
+        if (!acc[user]) {
+          acc[user] = 0;
+        }
+        acc[user] += 1;
+        return acc;
+      }, {});
+    
+    const userActivityArray = Object.keys(userActivityData).map(user => ({
+      name: user,
+      value: userActivityData[user]
+    }));
+    
+    return {
+      topSellingItems,
+      inventoryData,
+      profitData,
+      financialData,
+      dailyTrendData,
+      userActivityArray
+    };
+  };
+
+  // Generate report for specified date range
+  const generateReport = () => {
+    if (!reportStartDate || !reportEndDate) {
+      alert('Please select both start and end dates for the report.');
+      return;
+    }
+    
+    setIsGeneratingReport(true);
+    
+    // Simulate report generation delay
+    setTimeout(() => {
+      setIsGeneratingReport(false);
+      window.print();
+    }, 1000);
+  };
+
+  const totals = calculateTotals();
+  const chartData = generateChartData();
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Business Management System</h1>
+            <p className="text-gray-600">Please login to continue</p>
+          </div>
+          
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Enter username"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Enter password"
+                required
+              />
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105"
+            >
+              Sign In
+            </button>
+          </form>
+          
+          <div className="mt-6 text-center text-sm text-gray-500">
+            <p>Try: admin/admin123 or worker/worker123</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Simple bar chart component
+  const BarChart = ({ data, dataKey, color, title }) => {
+    const maxValue = Math.max(...data.map(item => item[dataKey])) || 1;
+    
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-sm">
+        <h4 className="font-semibold text-gray-800 mb-4">{title}</h4>
+        <div className="space-y-3">
+          {data.map((item, index) => (
+            <div key={index} className="flex items-center">
+              <div className="w-32 text-sm truncate text-gray-700">{item.name || item.day}</div>
+              <div className="flex-1 ml-4">
+                <div className="flex justify-between text-xs text-gray-600 mb-1">
+                  <span>{typeof item[dataKey] === 'number' ? formatTZS(item[dataKey]) : item[dataKey]}</span>
+                  <span>{Math.round((item[dataKey] / maxValue) * 100)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className={`${color} h-3 rounded-full`} 
+                    style={{ width: `${(item[dataKey] / maxValue) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Pie chart component
+  const PieChart = ({ data, title }) => {
+    const total = data.reduce((sum, item) => sum + item.value, 0);
+    
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-sm">
+        <h4 className="font-semibold text-gray-800 mb-4">{title}</h4>
+        <div className="flex flex-col md:flex-row items-center">
+          <div className="w-48 h-48 relative">
+            {data.map((item, index) => {
+              const percentage = total > 0 ? (item.value / total) * 100 : 0;
+              const startAngle = data.slice(0, index).reduce((sum, prev) => sum + (prev.value / total) * 360, 0);
+              const endAngle = startAngle + (item.value / total) * 360;
+              
+              if (percentage === 0) return null;
+              
+              return (
+                <div
+                  key={index}
+                  className="absolute inset-0 rounded-full flex items-center justify-center"
+                  style={{
+                    background: `conic-gradient(from ${startAngle}deg, transparent ${startAngle}deg, ${getChartColor(index)} ${startAngle}deg, ${getChartColor(index)} ${endAngle}deg, transparent ${endAngle}deg)`
+                  }}
+                ></div>
+              );
+            })}
+            <div className="absolute inset-8 bg-white rounded-full flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-800">{formatTZS(total)}</p>
+                <p className="text-xs text-gray-500">Total</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 md:mt-0 md:ml-6 flex-1">
+            <div className="space-y-2">
+              {data.map((item, index) => {
+                const percentage = total > 0 ? (item.value / total) * 100 : 0;
+                if (percentage === 0) return null;
+                
+                return (
+                  <div key={index} className="flex items-center">
+                    <div 
+                      className="w-4 h-4 rounded" 
+                      style={{ backgroundColor: getChartColor(index) }}
+                    ></div>
+                    <div className="ml-2 flex-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">{item.name}</span>
+                        <span className="font-medium">{formatTZS(item.value)}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div 
+                          className="h-2 rounded-full" 
+                          style={{ 
+                            width: `${percentage}%`,
+                            backgroundColor: getChartColor(index)
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Get chart color based on index
+  const getChartColor = (index) => {
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500', 
+      'bg-purple-500',
+      'bg-yellow-500',
+      'bg-red-500',
+      'bg-indigo-500',
+      'bg-pink-500',
+      'bg-teal-500'
+    ];
+    return colors[index % colors.length].replace('bg-', '');
+  };
+
+  // Navigation Tabs Component
+  const NavigationTabs = () => {
+    const adminTabs = [
+      { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+      { id: 'stock', label: 'Stock Management', icon: '📦' },
+      { id: 'costs', label: 'Costs', icon: '💰' },
+      { id: 'users', label: 'Users', icon: '👥' },
+      { id: 'reports', label: 'Reports', icon: '📑' },
+      { id: 'analytics', label: 'Analytics', icon: '📈' }
+    ];
+    
+    const workerTabs = [
+      { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+      { id: 'stock', label: 'Daily Stock', icon: '📦' },
+      { id: 'costs', label: 'Daily Costs', icon: '💰' }
+    ];
+    
+    const tabs = userRole === 'admin' ? adminTabs : workerTabs;
+    
+    return (
+      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex overflow-x-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-gray-900">Business Dashboard</h1>
+              <span className="ml-3 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                {userRole === 'admin' ? 'Administrator' : 'Worker'}
+              </span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm text-gray-600">{new Date().toLocaleDateString()}</p>
+                <p className="text-xs text-gray-500">{currentTime}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation Tabs */}
+      <NavigationTabs />
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Dashboard Tab */}
+        {activeTab === 'dashboard' && (
+          <>
+            {/* Date and Time Display */}
+            <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Current Date & Time</h2>
+                  <p className="text-gray-600">{new Date().toLocaleDateString()} • {currentTime}</p>
+                </div>
+                {userRole === 'admin' && (
+                  <div className="flex items-center mt-4 sm:mt-0">
+                    <label htmlFor="timeframe" className="mr-2 text-sm font-medium text-gray-700">View:</label>
+                    <select
+                      id="timeframe"
+                      value={timeframe}
+                      onChange={(e) => setTimeframe(e.target.value)}
+                      className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-blue-500">
+                <div className="flex items-center">
+                  <div className="p-2 rounded-full bg-blue-100">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs font-medium text-gray-600">Opening Stock</p>
+                    <p className="text-lg font-bold text-gray-900">{totals.totalOpeningStock.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-indigo-500">
+                <div className="flex items-center">
+                  <div className="p-2 rounded-full bg-indigo-100">
+                    <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs font-medium text-gray-600">Stock Added</p>
+                    <p className="text-lg font-bold text-gray-900">{totals.totalAdded.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-green-500">
+                <div className="flex items-center">
+                  <div className="p-2 rounded-full bg-green-100">
+                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs font-medium text-gray-600">Stock Sold</p>
+                    <p className="text-lg font-bold text-gray-900">{totals.totalSold.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-purple-500">
+                <div className="flex items-center">
+                  <div className="p-2 rounded-full bg-purple-100">
+                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs font-medium text-gray-600">Total Revenue</p>
+                    <p className="text-lg font-bold text-gray-900">{formatTZS(totals.totalRevenue)}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-amber-500">
+                <div className="flex items-center">
+                  <div className="p-2 rounded-full bg-amber-100">
+                    <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs font-medium text-gray-600">Closing Stock</p>
+                    <p className="text-lg font-bold text-gray-900">{totals.totalClosingStock.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Expected Profit Card - Admin Only */}
+            {userRole === 'admin' && (
+              <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-lg shadow-lg p-6 mb-6">
+                <h3 className="text-xl font-bold text-white mb-4">Expected Profit After All Items Sold</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-green-100 text-sm">Expected Profit</p>
+                    <p className="text-2xl font-bold text-white">{formatTZS(totals.expectedProfit)}</p>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-amber-100 text-sm">Total Items Remaining</p>
+                    <p className="text-2xl font-bold text-white">{totals.totalClosingStock.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Stock Management Tab */}
+        {activeTab === 'stock' && (
+          <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {userRole === 'admin' ? 'Stock Management' : 'Daily Stock Tracking'}
+            </h3>
+            
+            {userRole === 'worker' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                {/* Add New Stock Item */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-800 mb-3">Add New Stock Item</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                      <input
+                        type="text"
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter item name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                      <input
+                        type="number"
+                        value={newItemQuantity}
+                        onChange={(e) => setNewItemQuantity(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter quantity"
+                        min="1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Total Items Purchase Price (TZS)</label>
+                      <input
+                        type="number"
+                        value={newItemPurchasePrice}
+                        onChange={(e) => setNewItemPurchasePrice(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter total purchase price"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Expected Selling Price per Item (TZS)</label>
+                      <input
+                        type="number"
+                        value={newItemSellingPrice}
+                        onChange={(e) => setNewItemSellingPrice(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter expected selling price"
+                        min="0"
+                      />
+                    </div>
+                    <button
+                      onClick={addNewItem}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm"
+                    >
+                      Add New Item
+                    </button>
+                  </div>
+                </div>
+
+                {/* Today's Activities */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-800 mb-3">Today's Activities</h4>
+                  <div className="bg-white rounded-lg p-3 max-h-60 overflow-y-auto border">
+                    {dailyOperations.length === 0 ? (
+                      <p className="text-gray-500 text-xs py-2 text-center">No activities recorded today</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {dailyOperations.slice(-5).map((operation) => (
+                          <div key={operation.id} className="bg-gray-50 p-2 rounded text-xs">
+                            <p className="text-gray-800">{operation.description}</p>
+                            <div className="flex justify-between mt-1">
+                              <span className="text-gray-500">{operation.timestamp}</span>
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                operation.type === 'stock' ? 'bg-green-100 text-green-800' : 
+                                operation.type === 'cost' ? 'bg-red-100 text-red-800' : 
+                                'bg-blue-100 text-blue-800'
+                              }`}>
+                                {operation.type}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Stock Table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S/N</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ITEM NAME</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">OPENING STOCK</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ADDED</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SOLD</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL REVENUE</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CLOSING STOCK</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {items.map((item, index) => {
+                    const revenue = item.sold * item.sellingPrice;
+                    const closingStock = item.openingStock + item.added - item.sold;
+                    
+                    return (
+                      <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-3 py-2 whitespace-nowrap text-gray-900">{index + 1}</td>
+                        <td className="px-3 py-2 whitespace-nowrap font-medium text-gray-900">{item.name}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                          {userRole === 'worker' ? (
+                            <span>{item.openingStock}</span>
+                          ) : (
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.openingStock}
+                              onChange={(e) => handleItemChange(item.id, 'openingStock', e.target.value)}
+                              className="w-16 border border-gray-300 rounded px-1 py-1 text-center text-xs"
+                            />
+                          )}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                          {userRole === 'worker' ? (
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.added}
+                              onChange={(e) => handleItemChange(item.id, 'added', e.target.value)}
+                              className="w-16 border border-gray-300 rounded px-1 py-1 text-center text-xs"
+                            />
+                          ) : (
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.added}
+                              onChange={(e) => handleItemChange(item.id, 'added', e.target.value)}
+                              className="w-16 border border-gray-300 rounded px-1 py-1 text-center text-xs"
+                            />
+                          )}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-green-600 font-medium">
+                          {userRole === 'worker' ? (
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.sold}
+                              onChange={(e) => handleItemChange(item.id, 'sold', e.target.value)}
+                              className="w-16 border border-gray-300 rounded px-1 py-1 text-center text-xs"
+                            />
+                          ) : (
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.sold}
+                              onChange={(e) => handleItemChange(item.id, 'sold', e.target.value)}
+                              className="w-16 border border-gray-300 rounded px-1 py-1 text-center text-xs"
+                            />
+                          )}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-purple-600 font-medium">
+                          {formatTZS(revenue)}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-amber-600 font-medium">
+                          {Math.max(0, closingStock)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Expected Profit Section - Admin Only */}
+            {userRole === 'admin' && (
+              <div className="mt-6 bg-gradient-to-r from-green-500 to-blue-600 rounded-lg shadow-lg p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Expected Profit After All Items Sold</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-green-100 text-sm">Expected Profit</p>
+                    <p className="text-2xl font-bold text-white">{formatTZS(totals.expectedProfit)}</p>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-amber-100 text-sm">Total Items Remaining</p>
+                    <p className="text-2xl font-bold text-white">{totals.totalClosingStock.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-blue-100 text-sm">Potential Revenue</p>
+                    <p className="text-2xl font-bold text-white">
+                      {formatTZS(totals.totalClosingStock * (items.reduce((sum, item) => {
+                        if (item.sellingPrice > 0) {
+                          return sum + item.sellingPrice;
+                        }
+                        return sum;
+                      }, 0) / Math.max(items.filter(item => item.sellingPrice > 0).length, 1)))}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Costs Tab */}
+        {activeTab === 'costs' && (
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Business Costs</h3>
+            
+            {userRole === 'worker' && (
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <h4 className="font-medium text-gray-800 mb-3">Add New Cost</h4>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    value={newCostName}
+                    onChange={(e) => setNewCostAmountName(e.target.value)}
+                    placeholder="Cost name (e.g., Rent, Salaries)"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                  <input
+                    type="number"
+                    value={newCostAmount}
+                    onChange={(e) => setNewCostAmount(e.target.value)}
+                    placeholder="Amount in TZS"
+                    className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                  <button
+                    onClick={addNewCost}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm whitespace-nowrap"
+                  >
+                    Add Cost
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost Item</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    {userRole === 'worker' && (
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {costs.map((cost) => (
+                    <tr key={cost.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-3 py-2 whitespace-nowrap font-medium text-gray-900">{cost.name}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-red-600 font-medium">{formatTZS(cost.amount)}</td>
+                      {userRole === 'worker' && (
+                        <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                          <button
+                            onClick={() => removeCost(cost.id)}
+                            className="text-red-500 hover:text-red-700 text-xs"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                  <tr className="bg-gray-50 font-semibold">
+                    <td className="px-3 py-2 text-gray-900">Total Costs</td>
+                    <td className="px-3 py-2 text-red-600">{formatTZS(totals.totalCosts)}</td>
+                    {userRole === 'worker' && <td className="px-3 py-2"></td>}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Users Tab - Admin Only */}
+        {userRole === 'admin' && activeTab === 'users' && (
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">User Management</h3>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* Register New User */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-800 mb-3">Register New User</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input
+                      type="text"
+                      value={newUsername}
+                      onChange={(e) => setNewUsername(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder="Enter username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input
+                      type="password"
+                      value={newUserPassword}
+                      onChange={(e) => setNewUserPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder="Enter password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select
+                      value={newUserRole}
+                      onChange={(e) => setNewUserRole(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value="worker">Worker</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={registerNewUser}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm"
+                  >
+                    Register User
+                  </button>
+                </div>
+              </div>
+              
+              {/* User List */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-800 mb-3">User List</h4>
+                <div className="overflow-y-auto max-h-80">
+                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {users.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 whitespace-nowrap font-medium text-gray-900">{user.username}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-gray-500">{user.role}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              user.status === 'active' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {user.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm">
+                            <div className="flex flex-wrap gap-1">
+                              <button
+                                onClick={() => startEditingUser(user)}
+                                className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 transition-colors"
+                              >
+                                Edit
+                              </button>
+                              {user.username !== 'admin' && (
+                                <>
+                                  <button
+                                    onClick={() => toggleUserStatus(user.id)}
+                                    className={`text-xs px-2 py-1 rounded transition-colors ${
+                                      user.status === 'active'
+                                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                                        : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                    }`}
+                                  >
+                                    {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                                  </button>
+                                  <button
+                                    onClick={() => deleteUser(user.id)}
+                                    className="text-red-600 hover:text-red-800 text-xs px-2 py-1 rounded bg-red-100 hover:bg-red-200 transition-colors"
+                                  >
+                                    Delete
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Edit User Modal */}
+            {editingUser && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit User: {editingUser.username}</h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                      <input
+                        type="text"
+                        value={editUsername}
+                        onChange={(e) => setEditUsername(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                      <input
+                        type="password"
+                        value={editPassword}
+                        onChange={(e) => setEditPassword(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                      <select
+                        value={editRole}
+                        onChange={(e) => setEditRole(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      >
+                        <option value="worker">Worker</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex space-x-3 pt-4">
+                      <button
+                        onClick={saveEditedUser}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm"
+                      >
+                        Save Changes
+                      </button>
+                      <button
+                        onClick={cancelEditing}
+                        className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded-md transition-colors text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Reports Tab - Admin Only */}
+        {userRole === 'admin' && activeTab === 'reports' && (
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Generate Business Report</h3>
+            
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-blue-700">
+                    Select a date range to generate a comprehensive business report. The report will include sales data, inventory status, costs, and profit analysis.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={reportStartDate}
+                  onChange={(e) => setReportStartDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={reportEndDate}
+                  onChange={(e) => setReportEndDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+              </div>
+              
+              <div className="flex items-end">
+                <button
+                  onClick={generateReport}
+                  disabled={isGeneratingReport}
+                  className={`w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center text-sm ${
+                    isGeneratingReport ? 'opacity-75 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isGeneratingReport ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </>
+                  ) : (
+                    'Generate & Print Report'
+                  )}
+                </button>
+              </div>
+            </div>
+            
+            {/* Recent Reports Section */}
+            <div className="mt-6">
+              <h4 className="font-medium text-gray-800 mb-3">Recent Reports</h4>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600">No reports generated yet. Select a date range and click "Generate & Print Report" to create your first report.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Tab - Admin Only */}
+        {userRole === 'admin' && activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Graphical Business Analysis</h3>
+              
+              {/* Chart Navigation */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  onClick={() => setActiveChart('sales')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'sales' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Sales
+                </button>
+                <button
+                  onClick={() => setActiveChart('profit')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'profit' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Profit
+                </button>
+                <button
+                  onClick={() => setActiveChart('inventory')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'inventory' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Inventory
+                </button>
+                <button
+                  onClick={() => setActiveChart('financial')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'financial' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Financial
+                </button>
+                <button
+                  onClick={() => setActiveChart('trends')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'trends' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Trends
+                </button>
+                <button
+                  onClick={() => setActiveChart('users')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'users' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Users
+                </button>
+              </div>
+            </div>
+            
+            {/* Chart Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {activeChart === 'sales' && (
+                <>
+                  <BarChart 
+                    data={chartData.topSellingItems} 
+                    dataKey="sales" 
+                    color="bg-green-500" 
+                    title="Top 5 Selling Items by Revenue"
+                  />
+                  <BarChart 
+                    data={chartData.topSellingItems} 
+                    dataKey="quantity" 
+                    color="bg-blue-500" 
+                    title="Top 5 Selling Items by Quantity"
+                  />
+                </>
+              )}
+              
+              {activeChart === 'profit' && (
+                <>
+                  <BarChart 
+                    data={chartData.topSellingItems} 
+                    dataKey="profit" 
+                    color="bg-purple-500" 
+                    title="Top 5 Items by Profit"
+                  />
+                  <BarChart 
+                    data={chartData.topSellingItems} 
+                    dataKey="profitMargin" 
+                    color="bg-amber-500" 
+                    title="Top 5 Items by Profit Margin (%)"
+                  />
+                </>
+              )}
+              
+              {activeChart === 'inventory' && (
+                <>
+                  <BarChart 
+                    data={chartData.inventoryData.slice(0, 5)} 
+                    dataKey="sold" 
+                    color="bg-red-500" 
+                    title="Top 5 Items by Units Sold"
+                  />
+                  <BarChart 
+                    data={chartData.inventoryData.slice(0, 5)} 
+                    dataKey="value" 
+                    color="bg-indigo-500" 
+                    title="Top 5 Items by Inventory Value"
+                  />
+                </>
+              )}
+              
+              {activeChart === 'financial' && (
+                <>
+                  <PieChart 
+                    data={chartData.financialData} 
+                    title="Financial Breakdown"
+                  />
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <h4 className="font-semibold text-gray-800 mb-4 text-sm">Financial Ratios</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                        <span className="text-gray-700 font-medium text-xs">Profit Margin</span>
+                        <span className="text-blue-600 font-bold text-sm">
+                          {totals.totalRevenue > 0 ? `${((totals.netProfit / totals.totalRevenue) * 100).toFixed(2)}%` : '0%'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                        <span className="text-gray-700 font-medium text-xs">Cost to Revenue Ratio</span>
+                        <span className="text-green-600 font-bold text-sm">
+                          {totals.totalRevenue > 0 ? `${((totals.totalCosts / totals.totalRevenue) * 100).toFixed(2)}%` : '0%'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-purple-50 rounded">
+                        <span className="text-gray-700 font-medium text-xs">Gross Profit Margin</span>
+                        <span className="text-purple-600 font-bold text-sm">
+                          {totals.totalRevenue > 0 ? `${(((totals.totalRevenue - totals.totalPurchaseValue) / totals.totalRevenue) * 100).toFixed(2)}%` : '0%'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-amber-50 rounded">
+                        <span className="text-gray-700 font-medium text-xs">Return on Investment</span>
+                        <span className="text-amber-600 font-bold text-sm">
+                          {totals.totalPurchaseValue > 0 ? `${((totals.totalProfit / totals.totalPurchaseValue) * 100).toFixed(2)}%` : '0%'}
+                        </span>
+                      </div>
+                    </div>
+```jsx
+import React, { useState, useEffect, useRef } from 'react';
+
+const App = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [userRole, setUserRole] = useState(''); // 'admin' or 'worker'
+  const [activeTab, setActiveTab] = useState('dashboard'); // dashboard, stock, costs, users, reports, analytics
+  const [timeframe, setTimeframe] = useState('daily');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
+  const [activeChart, setActiveChart] = useState('sales');
+  
+  // State for business items with the requested products
+  const [items, setItems] = useState([
+    { id: 1, name: 'Flying Fish', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 2, name: 'Castle Lite', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 3, name: 'Safari', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 4, name: 'Kilimanjaro', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 5, name: 'Serengeti lemon', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 6, name: 'Wine(5litres)', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 7, name: 'Konyagi ndogo', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 8, name: 'Konyagi kati', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 9, name: 'Konyagi kubwa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 10, name: 'K-Vant', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 11, name: 'Smirnoff Orange', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 12, name: 'Master', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 13, name: 'Value', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 14, name: 'HansonChoice', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 15, name: 'Coca-cola chupa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 16, name: 'Pepsi chupa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 17, name: 'Tunda', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 18, name: 'Azam energy', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 19, name: 'Mo Extra', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 20, name: 'Mo Chungwa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 21, name: 'Mo Malt', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 22, name: 'Maji madogo', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 23, name: 'Maji Makubwa', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 24, name: 'Pepsi portable', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+    { id: 25, name: 'Mirinda Portable', openingStock: 0, added: 0, sold: 0, purchasePrice: 0, sellingPrice: 0, edited: false },
+  ]);
+  
+  // State for costs
+  const [costs, setCosts] = useState([
+    { id: 1, name: 'Electricity', amount: 0 },
+    { id: 2, name: 'Water Bills', amount: 0 },
+    { id: 3, name: 'Security', amount: 0 },
+    { id: 4, name: 'TV Charges', amount: 0 },
+    { id: 5, name: 'Other Emergency', amount: 0 },
+  ]);
+  
+  // State for new cost
+  const [newCostName, setNewCostAmountName] = useState('');
+  const [newCostAmount, setNewCostAmount] = useState('');
+  
+  // State for new stock item
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('');
+  const [newItemPurchasePrice, setNewItemPurchasePrice] = useState('');
+  const [newItemSellingPrice, setNewItemSellingPrice] = useState('');
+
+  // State for daily operations log (visible to admin)
+  const [dailyOperations, setDailyOperations] = useState([]);
+
+  // State for users management (admin only)
+  const [users, setUsers] = useState([
+    { id: 1, username: 'admin', password: 'admin123', role: 'admin', status: 'active' },
+    { id: 2, username: 'worker', password: 'worker123', role: 'worker', status: 'active' }
+  ]);
+  
+  // State for user editing
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUsername, setEditUsername] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [editRole, setEditRole] = useState('worker');
+
+  // State for new user registration
+  const [newUsername, setNewUsername] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('worker');
+
+  // State for report generation
+  const [reportStartDate, setReportStartDate] = useState('');
+  const [reportEndDate, setReportEndDate] = useState('');
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const reportRef = useRef();
+
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Calculate totals based on items and selected timeframe
+  const calculateTotals = () => {
+    let totalOpeningStock = 0;
+    let totalAdded = 0;
+    let totalSold = 0;
+    let totalClosingStock = 0;
+    let totalRevenue = 0;
+    let totalCosts = 0;
+    let totalPurchaseValue = 0;
+    let totalProfit = 0;
+    let expectedProfit = 0;
+
+    // Calculate item totals
+    items.forEach(item => {
+      totalOpeningStock += item.openingStock;
+      totalAdded += item.added;
+      totalSold += item.sold;
+      const closingStock = item.openingStock + item.added - item.sold;
+      totalClosingStock += Math.max(0, closingStock);
+      totalRevenue += (item.sold * item.sellingPrice);
+      totalPurchaseValue += (item.added * item.purchasePrice);
+      totalProfit += (item.sold * (item.sellingPrice - item.purchasePrice));
+      
+      // Calculate expected profit if all items sold
+      const totalItems = item.openingStock + item.added;
+      const remainingItems = totalItems - item.sold;
+      expectedProfit += remainingItems * (item.sellingPrice - item.purchasePrice);
+    });
+
+    // Calculate total costs
+    costs.forEach(cost => {
+      totalCosts += cost.amount;
+    });
+
+    // Adjust for timeframe (mock data adjustment)
+    if (timeframe === 'weekly') {
+      totalSold = Math.floor(totalSold * 7);
+      totalRevenue = totalRevenue * 7;
+      totalPurchaseValue = totalPurchaseValue * 7;
+      totalProfit = totalProfit * 7;
+      totalCosts = totalCosts * 7;
+      totalClosingStock = totalOpeningStock + totalAdded - totalSold;
+    } else if (timeframe === 'monthly') {
+      totalSold = Math.floor(totalSold * 30);
+      totalRevenue = totalRevenue * 30;
+      totalPurchaseValue = totalPurchaseValue * 30;
+      totalProfit = totalProfit * 30;
+      totalCosts = totalCosts * 30;
+      totalClosingStock = totalOpeningStock + totalAdded - totalSold;
+    } else if (timeframe === 'yearly') {
+      totalSold = Math.floor(totalSold * 365);
+      totalRevenue = totalRevenue * 365;
+      totalPurchaseValue = totalPurchaseValue * 365;
+      totalProfit = totalProfit * 365;
+      totalCosts = totalCosts * 365;
+      totalClosingStock = totalOpeningStock + totalAdded - totalSold;
+    }
+
+    const netProfit = totalProfit - totalCosts;
+
+    return {
+      totalOpeningStock,
+      totalAdded,
+      totalSold,
+      totalClosingStock,
+      totalRevenue,
+      totalCosts,
+      totalPurchaseValue,
+      totalProfit,
+      netProfit,
+      expectedProfit
+    };
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    
+    // Find user in users array
+    const user = users.find(u => u.username === username && u.password === password && u.status === 'active');
+    
+    if (user) {
+      setIsLoggedIn(true);
+      setUserRole(user.role);
+      setActiveTab('dashboard');
+    } else {
+      alert('Invalid credentials or inactive account.');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUsername('');
+    setPassword('');
+    setUserRole('');
+    setActiveTab('dashboard');
+  };
+
+  // Handle item changes
+  const handleItemChange = (id, field, value) => {
+    // Workers can only edit 'added', 'sold', and prices if not already edited
+    if (userRole === 'worker') {
+      const item = items.find(item => item.id === id);
+      
+      // Workers cannot edit openingStock or closingStock
+      if (field === 'openingStock' || field === 'closingStock') {
+        return;
+      }
+      
+      // Workers can only edit purchasePrice and sellingPrice once
+      if ((field === 'purchasePrice' || field === 'sellingPrice') && item.edited) {
+        alert('You can only edit prices once for this item.');
+        return;
+      }
+      
+      // Mark as edited if editing prices
+      if (field === 'purchasePrice' || field === 'sellingPrice') {
+        setItems(items.map(item => 
+          item.id === id ? { ...item, [field]: Number(value) || 0, edited: true } : item
+        ));
+        
+        // Log the operation
+        setDailyOperations([
+          ...dailyOperations,
+          {
+            id: dailyOperations.length + 1,
+            type: 'stock',
+            description: `Edited ${field} for ${item.name}`,
+            user: username,
+            timestamp: new Date().toLocaleString()
+          }
+        ]);
+        return;
+      }
+    }
+    
+    setItems(items.map(item => 
+      item.id === id ? { ...item, [field]: Number(value) || 0 } : item
+    ));
+    
+    // Log the operation for admin to see
+    if (userRole === 'worker') {
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'stock',
+          description: `Updated ${field} for item ID ${id}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+    }
+  };
+
+  // Add new cost
+  const addNewCost = () => {
+    if (newCostName.trim() && newCostAmount) {
+      const newCost = {
+        id: costs.length + 1,
+        name: newCostName.trim(),
+        amount: Number(newCostAmount) || 0
+      };
+      
+      setCosts([...costs, newCost]);
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'cost',
+          description: `Added cost: ${newCost.name} - ${formatTZS(newCost.amount)}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      setNewCostAmountName('');
+      setNewCostAmount('');
+    }
+  };
+
+  // Remove cost
+  const removeCost = (id) => {
+    const removedCost = costs.find(cost => cost.id === id);
+    if (removedCost) {
+      setCosts(costs.filter(cost => cost.id !== id));
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'cost',
+          description: `Removed cost: ${removedCost.name} - ${formatTZS(removedCost.amount)}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+    }
+  };
+
+  // Add new stock item
+  const addNewItem = () => {
+    if (newItemName.trim() && newItemQuantity && newItemPurchasePrice && newItemSellingPrice) {
+      const newItem = {
+        id: items.length + 1,
+        name: newItemName.trim(),
+        openingStock: 0,
+        added: Number(newItemQuantity) || 0,
+        sold: 0,
+        purchasePrice: Number(newItemPurchasePrice) || 0,
+        sellingPrice: Number(newItemSellingPrice) || 0,
+        edited: false
+      };
+      
+      setItems([...items, newItem]);
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'stock',
+          description: `Added new stock: ${newItem.name} - Quantity: ${newItem.added}, Total Purchase Price: ${formatTZS(newItem.purchasePrice * newItem.added)}, Expected Selling Price: ${formatTZS(newItem.sellingPrice)}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      // Reset form fields
+      setNewItemName('');
+      setNewItemQuantity('');
+      setNewItemPurchasePrice('');
+      setNewItemSellingPrice('');
+      
+      alert('New stock item added successfully!');
+    } else {
+      alert('Please fill in all fields: Item Name, Quantity, Total Purchase Price, and Expected Selling Price.');
+    }
+  };
+
+  // Start editing a user
+  const startEditingUser = (user) => {
+    setEditingUser(user);
+    setEditUsername(user.username);
+    setEditPassword(user.password);
+    setEditRole(user.role);
+  };
+
+  // Save edited user
+  const saveEditedUser = () => {
+    if (editUsername.trim() && editPassword.trim()) {
+      // Check if username is being changed and already exists
+      if (editUsername !== editingUser.username && users.some(user => user.username === editUsername.trim())) {
+        alert('Username already exists. Please choose another username.');
+        return;
+      }
+      
+      setUsers(users.map(user => 
+        user.id === editingUser.id 
+          ? { ...user, username: editUsername.trim(), password: editPassword.trim(), role: editRole }
+          : user
+      ));
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'user',
+          description: `Edited user: ${editingUser.username} -> ${editUsername.trim()}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      // Reset editing state
+      setEditingUser(null);
+      setEditUsername('');
+      setEditPassword('');
+      setEditRole('worker');
+      
+      alert('User updated successfully!');
+    } else {
+      alert('Please fill in all fields: Username and Password.');
+    }
+  };
+
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditingUser(null);
+    setEditUsername('');
+    setEditPassword('');
+    setEditRole('worker');
+  };
+
+  // Register new user
+  const registerNewUser = () => {
+    if (newUsername.trim() && newUserPassword.trim()) {
+      // Check if username already exists
+      if (users.some(user => user.username === newUsername.trim())) {
+        alert('Username already exists. Please choose another username.');
+        return;
+      }
+      
+      const newUser = {
+        id: Math.max(...users.map(u => u.id)) + 1,
+        username: newUsername.trim(),
+        password: newUserPassword.trim(),
+        role: newUserRole,
+        status: 'active'
+      };
+      
+      setUsers([...users, newUser]);
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'user',
+          description: `Registered new user: ${newUser.username} (${newUser.role})`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      // Reset form fields
+      setNewUsername('');
+      setNewUserPassword('');
+      setNewUserRole('worker');
+      
+      alert('New user registered successfully!');
+    } else {
+      alert('Please fill in all fields: Username and Password.');
+    }
+  };
+
+  // Toggle user status (activate/deactivate)
+  const toggleUserStatus = (id) => {
+    const user = users.find(u => u.id === id);
+    if (user && user.username !== 'admin') {
+      setUsers(users.map(u => 
+        u.id === id ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u
+      ));
+      
+      // Log the operation
+      setDailyOperations([
+        ...dailyOperations,
+        {
+          id: dailyOperations.length + 1,
+          type: 'user',
+          description: `${user.status === 'active' ? 'Deactivated' : 'Activated'} user: ${user.username}`,
+          user: username,
+          timestamp: new Date().toLocaleString()
+        }
+      ]);
+      
+      alert(`${user.status === 'active' ? 'User deactivated' : 'User activated'} successfully!`);
+    } else if (user && user.username === 'admin') {
+      alert('Cannot deactivate the admin account.');
+    }
+  };
+
+  // Permanently delete user
+  const deleteUser = (id) => {
+    const user = users.find(u => u.id === id);
+    if (user && user.username !== 'admin') {
+      if (window.confirm(`Are you sure you want to permanently delete user: ${user.username}? This action cannot be undone.`)) {
+        setUsers(users.filter(u => u.id !== id));
+        
+        // Log the operation
+        setDailyOperations([
+          ...dailyOperations,
+          {
+            id: dailyOperations.length + 1,
+            type: 'user',
+            description: `Permanently deleted user: ${user.username}`,
+            user: username,
+            timestamp: new Date().toLocaleString()
+          }
+        ]);
+        
+        alert('User permanently deleted!');
+      }
+    } else if (user && user.username === 'admin') {
+      alert('Cannot delete the admin account.');
+    }
+  };
+
+  // Format Tanzania Shillings
+  const formatTZS = (amount) => {
+    return new Intl.NumberFormat('sw-TZ', {
+      style: 'currency',
+      currency: 'TZS',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Generate chart data for graphical analysis
+  const generateChartData = () => {
+    const totals = calculateTotals();
+    
+    // Top 5 selling items
+    const topSellingItems = [...items]
+      .filter(item => item.sold > 0)
+      .sort((a, b) => (b.sold * b.sellingPrice) - (a.sold * a.sellingPrice))
+      .slice(0, 5)
+      .map(item => ({
+        name: item.name,
+        sales: item.sold * item.sellingPrice,
+        quantity: item.sold,
+        profit: (item.sold * item.sellingPrice) - (item.sold * item.purchasePrice),
+        profitMargin: item.sellingPrice > 0 ? ((item.sellingPrice - item.purchasePrice) / item.sellingPrice * 100) : 0
+      }));
+    
+    // Inventory status
+    const inventoryData = items
+      .filter(item => item.openingStock > 0 || item.added > 0)
+      .map(item => ({
+        name: item.name,
+        sold: item.sold,
+        remaining: Math.max(0, item.openingStock + item.added - item.sold),
+        value: (item.openingStock + item.added - item.sold) * item.sellingPrice,
+        costValue: (item.openingStock + item.added - item.sold) * item.purchasePrice
+      }));
+    
+    // Profit by item
+    const profitData = items
+      .filter(item => item.sold > 0)
+      .map(item => ({
+        name: item.name,
+        profit: (item.sold * item.sellingPrice) - (item.sold * item.purchasePrice),
+        revenue: item.sold * item.sellingPrice,
+        cost: item.sold * item.purchasePrice
+      }));
+    
+    // Revenue vs Costs
+    const financialData = [
+      { name: 'Revenue', value: totals.totalRevenue },
+      { name: 'Purchase Costs', value: totals.totalPurchaseValue },
+      { name: 'Operational Costs', value: totals.totalCosts },
+      { name: 'Gross Profit', value: totals.totalProfit },
+      { name: 'Net Profit', value: totals.netProfit }
+    ];
+    
+    // Daily trend data (mock data for visualization)
+    const dailyTrendData = [
+      { day: 'Mon', sales: totals.totalRevenue * 0.8, profit: totals.netProfit * 0.8 },
+      { day: 'Tue', sales: totals.totalRevenue * 0.9, profit: totals.netProfit * 0.9 },
+      { day: 'Wed', sales: totals.totalRevenue * 1.1, profit: totals.netProfit * 1.1 },
+      { day: 'Thu', sales: totals.totalRevenue * 0.95, profit: totals.netProfit * 0.95 },
+      { day: 'Fri', sales: totals.totalRevenue * 1.2, profit: totals.netProfit * 1.2 },
+      { day: 'Sat', sales: totals.totalRevenue * 1.3, profit: totals.netProfit * 1.3 },
+      { day: 'Sun', sales: totals.totalRevenue * 0.7, profit: totals.netProfit * 0.7 }
+    ];
+    
+    // User activity data
+    const userActivityData = dailyOperations
+      .filter(op => op.type === 'stock' || op.type === 'cost')
+      .reduce((acc, op) => {
+        const user = op.user;
+        if (!acc[user]) {
+          acc[user] = 0;
+        }
+        acc[user] += 1;
+        return acc;
+      }, {});
+    
+    const userActivityArray = Object.keys(userActivityData).map(user => ({
+      name: user,
+      value: userActivityData[user]
+    }));
+    
+    return {
+      topSellingItems,
+      inventoryData,
+      profitData,
+      financialData,
+      dailyTrendData,
+      userActivityArray
+    };
+  };
+
+  // Generate report for specified date range
+  const generateReport = () => {
+    if (!reportStartDate || !reportEndDate) {
+      alert('Please select both start and end dates for the report.');
+      return;
+    }
+    
+    setIsGeneratingReport(true);
+    
+    // Simulate report generation delay
+    setTimeout(() => {
+      setIsGeneratingReport(false);
+      window.print();
+    }, 1000);
+  };
+
+  const totals = calculateTotals();
+  const chartData = generateChartData();
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Business Management System</h1>
+            <p className="text-gray-600">Please login to continue</p>
+          </div>
+          
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Enter username"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Enter password"
+                required
+              />
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105"
+            >
+              Sign In
+            </button>
+          </form>
+          
+          <div className="mt-6 text-center text-sm text-gray-500">
+            <p>Try: admin/admin123 or worker/worker123</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Simple bar chart component
+  const BarChart = ({ data, dataKey, color, title }) => {
+    const maxValue = Math.max(...data.map(item => item[dataKey])) || 1;
+    
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-sm">
+        <h4 className="font-semibold text-gray-800 mb-4">{title}</h4>
+        <div className="space-y-3">
+          {data.map((item, index) => (
+            <div key={index} className="flex items-center">
+              <div className="w-32 text-sm truncate text-gray-700">{item.name || item.day}</div>
+              <div className="flex-1 ml-4">
+                <div className="flex justify-between text-xs text-gray-600 mb-1">
+                  <span>{typeof item[dataKey] === 'number' ? formatTZS(item[dataKey]) : item[dataKey]}</span>
+                  <span>{Math.round((item[dataKey] / maxValue) * 100)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className={`${color} h-3 rounded-full`} 
+                    style={{ width: `${(item[dataKey] / maxValue) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Pie chart component
+  const PieChart = ({ data, title }) => {
+    const total = data.reduce((sum, item) => sum + item.value, 0);
+    
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-sm">
+        <h4 className="font-semibold text-gray-800 mb-4">{title}</h4>
+        <div className="flex flex-col md:flex-row items-center">
+          <div className="w-48 h-48 relative">
+            {data.map((item, index) => {
+              const percentage = total > 0 ? (item.value / total) * 100 : 0;
+              const startAngle = data.slice(0, index).reduce((sum, prev) => sum + (prev.value / total) * 360, 0);
+              const endAngle = startAngle + (item.value / total) * 360;
+              
+              if (percentage === 0) return null;
+              
+              return (
+                <div
+                  key={index}
+                  className="absolute inset-0 rounded-full flex items-center justify-center"
+                  style={{
+                    background: `conic-gradient(from ${startAngle}deg, transparent ${startAngle}deg, ${getChartColor(index)} ${startAngle}deg, ${getChartColor(index)} ${endAngle}deg, transparent ${endAngle}deg)`
+                  }}
+                ></div>
+              );
+            })}
+            <div className="absolute inset-8 bg-white rounded-full flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-lg font-bold text-gray-800">{formatTZS(total)}</p>
+                <p className="text-xs text-gray-500">Total</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 md:mt-0 md:ml-6 flex-1">
+            <div className="space-y-2">
+              {data.map((item, index) => {
+                const percentage = total > 0 ? (item.value / total) * 100 : 0;
+                if (percentage === 0) return null;
+                
+                return (
+                  <div key={index} className="flex items-center">
+                    <div 
+                      className="w-4 h-4 rounded" 
+                      style={{ backgroundColor: getChartColor(index) }}
+                    ></div>
+                    <div className="ml-2 flex-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-700">{item.name}</span>
+                        <span className="font-medium">{formatTZS(item.value)}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div 
+                          className="h-2 rounded-full" 
+                          style={{ 
+                            width: `${percentage}%`,
+                            backgroundColor: getChartColor(index)
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Get chart color based on index
+  const getChartColor = (index) => {
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500', 
+      'bg-purple-500',
+      'bg-yellow-500',
+      'bg-red-500',
+      'bg-indigo-500',
+      'bg-pink-500',
+      'bg-teal-500'
+    ];
+    return colors[index % colors.length].replace('bg-', '');
+  };
+
+  // Navigation Tabs Component
+  const NavigationTabs = () => {
+    const adminTabs = [
+      { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+      { id: 'stock', label: 'Stock Management', icon: '📦' },
+      { id: 'costs', label: 'Costs', icon: '💰' },
+      { id: 'users', label: 'Users', icon: '👥' },
+      { id: 'reports', label: 'Reports', icon: '📑' },
+      { id: 'analytics', label: 'Analytics', icon: '📈' }
+    ];
+    
+    const workerTabs = [
+      { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+      { id: 'stock', label: 'Daily Stock', icon: '📦' },
+      { id: 'costs', label: 'Daily Costs', icon: '💰' }
+    ];
+    
+    const tabs = userRole === 'admin' ? adminTabs : workerTabs;
+    
+    return (
+      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex overflow-x-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-gray-900">Business Dashboard</h1>
+              <span className="ml-3 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                {userRole === 'admin' ? 'Administrator' : 'Worker'}
+              </span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm text-gray-600">{new Date().toLocaleDateString()}</p>
+                <p className="text-xs text-gray-500">{currentTime}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation Tabs */}
+      <NavigationTabs />
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Dashboard Tab */}
+        {activeTab === 'dashboard' && (
+          <>
+            {/* Date and Time Display */}
+            <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Current Date & Time</h2>
+                  <p className="text-gray-600">{new Date().toLocaleDateString()} • {currentTime}</p>
+                </div>
+                {userRole === 'admin' && (
+                  <div className="flex items-center mt-4 sm:mt-0">
+                    <label htmlFor="timeframe" className="mr-2 text-sm font-medium text-gray-700">View:</label>
+                    <select
+                      id="timeframe"
+                      value={timeframe}
+                      onChange={(e) => setTimeframe(e.target.value)}
+                      className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-blue-500">
+                <div className="flex items-center">
+                  <div className="p-2 rounded-full bg-blue-100">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs font-medium text-gray-600">Opening Stock</p>
+                    <p className="text-lg font-bold text-gray-900">{totals.totalOpeningStock.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-indigo-500">
+                <div className="flex items-center">
+                  <div className="p-2 rounded-full bg-indigo-100">
+                    <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs font-medium text-gray-600">Stock Added</p>
+                    <p className="text-lg font-bold text-gray-900">{totals.totalAdded.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-green-500">
+                <div className="flex items-center">
+                  <div className="p-2 rounded-full bg-green-100">
+                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs font-medium text-gray-600">Stock Sold</p>
+                    <p className="text-lg font-bold text-gray-900">{totals.totalSold.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-purple-500">
+                <div className="flex items-center">
+                  <div className="p-2 rounded-full bg-purple-100">
+                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs font-medium text-gray-600">Total Revenue</p>
+                    <p className="text-lg font-bold text-gray-900">{formatTZS(totals.totalRevenue)}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm p-4 border-l-4 border-amber-500">
+                <div className="flex items-center">
+                  <div className="p-2 rounded-full bg-amber-100">
+                    <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs font-medium text-gray-600">Closing Stock</p>
+                    <p className="text-lg font-bold text-gray-900">{totals.totalClosingStock.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Expected Profit Card - Admin Only */}
+            {userRole === 'admin' && (
+              <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-lg shadow-lg p-6 mb-6">
+                <h3 className="text-xl font-bold text-white mb-4">Expected Profit After All Items Sold</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-green-100 text-sm">Expected Profit</p>
+                    <p className="text-2xl font-bold text-white">{formatTZS(totals.expectedProfit)}</p>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-amber-100 text-sm">Total Items Remaining</p>
+                    <p className="text-2xl font-bold text-white">{totals.totalClosingStock.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Stock Management Tab */}
+        {activeTab === 'stock' && (
+          <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {userRole === 'admin' ? 'Stock Management' : 'Daily Stock Tracking'}
+            </h3>
+            
+            {userRole === 'worker' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                {/* Add New Stock Item */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-800 mb-3">Add New Stock Item</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                      <input
+                        type="text"
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter item name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                      <input
+                        type="number"
+                        value={newItemQuantity}
+                        onChange={(e) => setNewItemQuantity(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter quantity"
+                        min="1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Total Items Purchase Price (TZS)</label>
+                      <input
+                        type="number"
+                        value={newItemPurchasePrice}
+                        onChange={(e) => setNewItemPurchasePrice(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter total purchase price"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Expected Selling Price per Item (TZS)</label>
+                      <input
+                        type="number"
+                        value={newItemSellingPrice}
+                        onChange={(e) => setNewItemSellingPrice(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter expected selling price"
+                        min="0"
+                      />
+                    </div>
+                    <button
+                      onClick={addNewItem}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm"
+                    >
+                      Add New Item
+                    </button>
+                  </div>
+                </div>
+
+                {/* Today's Activities */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-800 mb-3">Today's Activities</h4>
+                  <div className="bg-white rounded-lg p-3 max-h-60 overflow-y-auto border">
+                    {dailyOperations.length === 0 ? (
+                      <p className="text-gray-500 text-xs py-2 text-center">No activities recorded today</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {dailyOperations.slice(-5).map((operation) => (
+                          <div key={operation.id} className="bg-gray-50 p-2 rounded text-xs">
+                            <p className="text-gray-800">{operation.description}</p>
+                            <div className="flex justify-between mt-1">
+                              <span className="text-gray-500">{operation.timestamp}</span>
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                operation.type === 'stock' ? 'bg-green-100 text-green-800' : 
+                                operation.type === 'cost' ? 'bg-red-100 text-red-800' : 
+                                'bg-blue-100 text-blue-800'
+                              }`}>
+                                {operation.type}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Stock Table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S/N</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ITEM NAME</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">OPENING STOCK</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ADDED</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SOLD</th>
+                    {userRole === 'admin' && (
+                      <>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL PURCHASE PRICE</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">EXPECTED SELLING PRICE</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TOTAL REVENUE</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PROFIT</th>
+                      </>
+                    )}
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CLOSING STOCK</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {items.map((item, index) => {
+                    const totalPurchasePrice = item.added * item.purchasePrice;
+                    const revenue = item.sold * item.sellingPrice;
+                    const profit = item.sold * (item.sellingPrice - item.purchasePrice);
+                    const closingStock = item.openingStock + item.added - item.sold;
+                    
+                    return (
+                      <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-3 py-2 whitespace-nowrap text-gray-900">{index + 1}</td>
+                        <td className="px-3 py-2 whitespace-nowrap font-medium text-gray-900">{item.name}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                          {userRole === 'worker' ? (
+                            <span>{item.openingStock}</span>
+                          ) : (
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.openingStock}
+                              onChange={(e) => handleItemChange(item.id, 'openingStock', e.target.value)}
+                              className="w-16 border border-gray-300 rounded px-1 py-1 text-center text-xs"
+                            />
+                          )}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                          {userRole === 'worker' ? (
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.added}
+                              onChange={(e) => handleItemChange(item.id, 'added', e.target.value)}
+                              className="w-16 border border-gray-300 rounded px-1 py-1 text-center text-xs"
+                            />
+                          ) : (
+                            <span>{item.added}</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-green-600 font-medium">
+                          {userRole === 'worker' ? (
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.sold}
+                              onChange={(e) => handleItemChange(item.id, 'sold', e.target.value)}
+                              className="w-16 border border-gray-300 rounded px-1 py-1 text-center text-xs"
+                            />
+                          ) : (
+                            <span>{item.sold}</span>
+                          )}
+                        </td>
+                        {userRole === 'admin' && (
+                          <>
+                            <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                              {formatTZS(totalPurchasePrice)}
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                              {formatTZS(item.sellingPrice)}
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-purple-600 font-medium">
+                              {formatTZS(revenue)}
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap text-blue-600 font-medium">
+                              {formatTZS(profit)}
+                            </td>
+                          </>
+                        )}
+                        <td className="px-3 py-2 whitespace-nowrap text-amber-600 font-medium">
+                          {Math.max(0, closingStock)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Expected Profit Section - Admin Only */}
+            {userRole === 'admin' && (
+              <div className="mt-6 bg-gradient-to-r from-green-500 to-blue-600 rounded-lg shadow-lg p-6">
+                <h3 className="text-xl font-bold text-white mb-4">Expected Profit After All Items Sold</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-green-100 text-sm">Expected Profit</p>
+                    <p className="text-2xl font-bold text-white">{formatTZS(totals.expectedProfit)}</p>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-amber-100 text-sm">Total Items Remaining</p>
+                    <p className="text-2xl font-bold text-white">{totals.totalClosingStock.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                    <p className="text-blue-100 text-sm">Potential Revenue</p>
+                    <p className="text-2xl font-bold text-white">
+                      {formatTZS(totals.totalClosingStock * items.reduce((avg, item) => {
+                        if (item.sellingPrice > 0) {
+                          return avg + item.sellingPrice;
+                        }
+                        return avg;
+                      }, 0) / items.filter(item => item.sellingPrice > 0).length || 1)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Costs Tab */}
+        {activeTab === 'costs' && (
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Business Costs</h3>
+            
+            {userRole === 'worker' && (
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <h4 className="font-medium text-gray-800 mb-3">Add New Cost</h4>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    value={newCostName}
+                    onChange={(e) => setNewCostAmountName(e.target.value)}
+                    placeholder="Cost name (e.g., Rent, Salaries)"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                  <input
+                    type="number"
+                    value={newCostAmount}
+                    onChange={(e) => setNewCostAmount(e.target.value)}
+                    placeholder="Amount in TZS"
+                    className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  />
+                  <button
+                    onClick={addNewCost}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm whitespace-nowrap"
+                  >
+                    Add Cost
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost Item</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    {userRole === 'worker' && (
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {costs.map((cost) => (
+                    <tr key={cost.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-3 py-2 whitespace-nowrap font-medium text-gray-900">{cost.name}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-red-600 font-medium">{formatTZS(cost.amount)}</td>
+                      {userRole === 'worker' && (
+                        <td className="px-3 py-2 whitespace-nowrap text-gray-500">
+                          <button
+                            onClick={() => removeCost(cost.id)}
+                            className="text-red-500 hover:text-red-700 text-xs"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                  <tr className="bg-gray-50 font-semibold">
+                    <td className="px-3 py-2 text-gray-900">Total Costs</td>
+                    <td className="px-3 py-2 text-red-600">{formatTZS(totals.totalCosts)}</td>
+                    {userRole === 'worker' && <td className="px-3 py-2"></td>}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Users Tab - Admin Only */}
+        {userRole === 'admin' && activeTab === 'users' && (
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">User Management</h3>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* Register New User */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-800 mb-3">Register New User</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input
+                      type="text"
+                      value={newUsername}
+                      onChange={(e) => setNewUsername(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder="Enter username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input
+                      type="password"
+                      value={newUserPassword}
+                      onChange={(e) => setNewUserPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder="Enter password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select
+                      value={newUserRole}
+                      onChange={(e) => setNewUserRole(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value="worker">Worker</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={registerNewUser}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm"
+                  >
+                    Register User
+                  </button>
+                </div>
+              </div>
+              
+              {/* User List */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-800 mb-3">User List</h4>
+                <div className="overflow-y-auto max-h-80">
+                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {users.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 whitespace-nowrap font-medium text-gray-900">{user.username}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-gray-500">{user.role}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              user.status === 'active' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {user.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm">
+                            <div className="flex flex-wrap gap-1">
+                              <button
+                                onClick={() => startEditingUser(user)}
+                                className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 rounded bg-blue-100 hover:bg-blue-200 transition-colors"
+                              >
+                                Edit
+                              </button>
+                              {user.username !== 'admin' && (
+                                <>
+                                  <button
+                                    onClick={() => toggleUserStatus(user.id)}
+                                    className={`text-xs px-2 py-1 rounded transition-colors ${
+                                      user.status === 'active'
+                                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                                        : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                    }`}
+                                  >
+                                    {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                                  </button>
+                                  <button
+                                    onClick={() => deleteUser(user.id)}
+                                    className="text-red-600 hover:text-red-800 text-xs px-2 py-1 rounded bg-red-100 hover:bg-red-200 transition-colors"
+                                  >
+                                    Delete
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Edit User Modal */}
+            {editingUser && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit User: {editingUser.username}</h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                      <input
+                        type="text"
+                        value={editUsername}
+                        onChange={(e) => setEditUsername(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                      <input
+                        type="password"
+                        value={editPassword}
+                        onChange={(e) => setEditPassword(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                      <select
+                        value={editRole}
+                        onChange={(e) => setEditRole(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      >
+                        <option value="worker">Worker</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex space-x-3 pt-4">
+                      <button
+                        onClick={saveEditedUser}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors text-sm"
+                      >
+                        Save Changes
+                      </button>
+                      <button
+                        onClick={cancelEditing}
+                        className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded-md transition-colors text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Reports Tab - Admin Only */}
+        {userRole === 'admin' && activeTab === 'reports' && (
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Generate Business Report</h3>
+            
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-blue-700">
+                    Select a date range to generate a comprehensive business report. The report will include sales data, inventory status, costs, and profit analysis.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={reportStartDate}
+                  onChange={(e) => setReportStartDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={reportEndDate}
+                  onChange={(e) => setReportEndDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+              </div>
+              
+              <div className="flex items-end">
+                <button
+                  onClick={generateReport}
+                  disabled={isGeneratingReport}
+                  className={`w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center text-sm ${
+                    isGeneratingReport ? 'opacity-75 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isGeneratingReport ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </>
+                  ) : (
+                    'Generate & Print Report'
+                  )}
+                </button>
+              </div>
+            </div>
+            
+            {/* Recent Reports Section */}
+            <div className="mt-6">
+              <h4 className="font-medium text-gray-800 mb-3">Recent Reports</h4>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600">No reports generated yet. Select a date range and click "Generate & Print Report" to create your first report.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Tab - Admin Only */}
+        {userRole === 'admin' && activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Graphical Business Analysis</h3>
+              
+              {/* Chart Navigation */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  onClick={() => setActiveChart('sales')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'sales' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Sales
+                </button>
+                <button
+                  onClick={() => setActiveChart('profit')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'profit' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Profit
+                </button>
+                <button
+                  onClick={() => setActiveChart('inventory')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'inventory' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Inventory
+                </button>
+                <button
+                  onClick={() => setActiveChart('financial')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'financial' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Financial
+                </button>
+                <button
+                  onClick={() => setActiveChart('trends')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'trends' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Trends
+                </button>
+                <button
+                  onClick={() => setActiveChart('users')}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                    activeChart === 'users' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Users
+                </button>
+              </div>
+            </div>
+            
+            {/* Chart Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {activeChart === 'sales' && (
+                <>
+                  <BarChart 
+                    data={chartData.topSellingItems} 
+                    dataKey="sales" 
+                    color="bg-green-500" 
+                    title="Top 5 Selling Items by Revenue"
+                  />
+                  <BarChart 
+                    data={chartData.topSellingItems} 
+                    dataKey="quantity" 
+                    color="bg-blue-500" 
+                    title="Top 5 Selling Items by Quantity"
+                  />
+                </>
+              )}
+              
+              {activeChart === 'profit' && (
+                <>
+                  <BarChart 
+                    data={chartData.topSellingItems} 
+                    dataKey="profit" 
+                    color="bg-purple-500" 
+                    title="Top 5 Items by Profit"
+                  />
+                  <BarChart 
+                    data={chartData.topSellingItems} 
+                    dataKey="profitMargin" 
+                    color="bg-amber-500" 
+                    title="Top 5 Items by Profit Margin (%)"
+                  />
+                </>
+              )}
+              
+              {activeChart === 'inventory' && (
+                <>
+                  <BarChart 
+                    data={chartData.inventoryData.slice(0, 5)} 
+                    dataKey="sold" 
+                    color="bg-red-500" 
+                    title="Top 5 Items by Units Sold"
+                  />
+                  <BarChart 
+                    data={chartData.inventoryData.slice(0, 5)} 
+                    dataKey="value" 
+                    color="bg-indigo-500" 
+                    title="Top 5 Items by Inventory Value"
+                  />
+                </>
+              )}
+              
+              {activeChart === 'financial' && (
+                <>
+                  <PieChart 
+                    data={chartData.financialData} 
+                    title="Financial Breakdown"
+                  />
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <h4 className="font-semibold text-gray-800 mb-4 text-sm">Financial Ratios</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                        <span className="text-gray-700 font-medium text-xs">Profit Margin</span>
+                        <span className="text-blue-600 font-bold text-sm">
+                          {totals.totalRevenue > 0 ? `${((totals.netProfit / totals.totalRevenue) * 100).toFixed(2)}%` : '0%'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                        <span className="text-gray-700 font-medium text-xs">Cost to Revenue Ratio</span>
+                        <span className="text-green-600 font-bold text-sm">
+                          {totals.totalRevenue > 0 ? `${((totals.totalCosts / totals.totalRevenue) * 100).toFixed(2)}%` : '0%'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-purple-50 rounded">
+                        <span className="text-gray-700 font-medium text-xs">Gross Profit Margin</span>
+                        <span className="text-purple-600 font-bold text-sm">
+                          {totals.totalRevenue > 0 ? `${(((totals.totalRevenue - totals.totalPurchaseValue) / totals.totalRevenue) * 100).toFixed(2)}%` : '0%'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-amber-50 rounded">
+                        <span className="text-gray-700 font-medium text-xs">Return on Investment</span>
+                        <span className="text-amber-600 font-bold text-sm">
+                          {totals.totalPurchaseValue > 0 ? `${((totals.totalProfit / totals.totalPurchaseValue) * 100).toFixed(2)}%` : '0%'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {activeChart === 'trends' && (
+                <>
+                  <BarChart 
+                    data={chartData.dailyTrendData} 
+                    dataKey="sales" 
+                    color="bg-purple-500" 
+                    title="Weekly Sales Trend"
+                  />
+                  <BarChart 
+                    data={chartData.dailyTrendData} 
+                    dataKey="profit" 
+                    color="bg-teal-500" 
+                    title="Weekly Profit Trend"
+                  />
+                </>
+              )}
+              
+              {activeChart === 'users' && (
+                <>
+                  <PieChart 
+                    data={chartData.userActivityArray} 
+                    title="User Activity Distribution"
+                  />
+                  <BarChart 
+                    data={chartData.userActivityArray} 
+                    dataKey="value" 
+                    color="bg-indigo-500" 
+                    title="User Activity Count"
+                  />
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Printable Report Section */}
+        {userRole === 'admin' && (
+          <div ref={reportRef} className="hidden">
+            <div className="p-8">
+              <h1 className="text-3xl font-bold text-center mb-8">Business Report</h1>
+              <div className="text-center mb-8">
+                <p className="text-lg">Period: {reportStartDate} to {reportEndDate}</p>
+                <p className="text-sm text-gray-600">Generated on: {new Date().toLocaleString()}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                <div className="bg-gray-100 p-4 rounded">
+                  <h3 className="font-semibold text-gray-700">Opening Stock</h3>
+                  <p className="text-2xl font-bold">{totals.totalOpeningStock.toLocaleString()}</p>
+                </div>
+                <div className="bg-gray-100 p-4 rounded">
+                  <h3 className="font-semibold text-gray-700">Stock Added</h3>
+                  <p className="text-2xl font-bold">{totals.totalAdded.toLocaleString()}</p>
+                </div>
+                <div className="bg-gray-100 p-4 rounded">
+                  <h3 className="font-semibold text-gray-700">Stock Sold</h3>
+                  <p className="text-2xl font-bold">{totals.totalSold.toLocaleString()}</p>
+                </div>
+                <div className="bg-gray-100 p-4 rounded">
+                  <h3 className="font-semibold text-gray-700">Total Revenue</h3>
+                  <p className="text-2xl font-bold">{formatTZS(totals.totalRevenue)}</p>
+                </div>
+                <div className="bg-gray-100 p-4 rounded">
+                  <h3 className="font-semibold text-gray-700">Net Profit</h3>
+                  <p className="text-2xl font-bold">{formatTZS(totals.netProfit)}</p>
+                </div>
+              </div>
+              
+              <h2 className="text-xl font-bold mb-4">Detailed Sales Report</h2>
+              <table className="w-full border-collapse border border-gray-300 mb-8">
+                <thead>
+                  <tr className="bg-gray-200">
+                    <th className="border border-gray-300 px-4 py-2">Item</th>
+                    <th className="border border-gray-300 px-4 py-2">Added</th>
+                    <th className="border border-gray-300 px-4 py-2">Sold</th>
+                    <th className="border border-gray-300 px-4 py-2">Revenue</th>
+                    <th className="border border-gray-300 px-4 py-2">Profit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.filter(item => item.sold > 0 || item.added > 0).map((item, index) => {
+                    const revenue = item.sold * item.sellingPrice;
+                    const profit = item.sold * (item.sellingPrice - item.purchasePrice);
+                    return (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                        <td className="border border-gray-300 px-4 py-2">{item.name}</td>
+                        <td className="border border-gray-300 px-4 py-2">{item.added}</td>
+                        <td className="border border-gray-300 px-4 py-2">{item.sold}</td>
+                        <td className="border border-gray-300 px-4 py-2">{formatTZS(revenue)}</td>
+                        <td className="border border-gray-300 px-4 py-2">{formatTZS(profit)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              
+              <h2 className="text-xl font-bold mb-4">Costs Breakdown</h2>
+              <table className="w-full border-collapse border border-gray-300 mb-8">
+                <thead>
+                  <tr className="bg-gray-200">
+                    <th className="border border-gray-300 px-4 py-2">Cost Item</th>
+                    <th className="border border-gray-300 px-4 py-2">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {costs.map((cost, index) => (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                      <td className="border border-gray-300 px-4 py-2">{cost.name}</td>
+                      <td className="border border-gray-300 px-4 py-2">{formatTZS(cost.amount)}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-bold bg-gray-200">
+                    <td className="border border-gray-300 px-4 py-2">Total Costs</td>
+                    <td className="border border-gray-300 px-4 py-2">{formatTZS(totals.totalCosts)}</td>
+                  </tr>
+                </tbody>
+              </table>
+              
+              <div className="mt-8 p-4 bg-blue-100 rounded">
+                <h3 className="font-bold text-blue-800 mb-2">Summary</h3>
+                <p className="text-blue-700">Total Revenue: {formatTZS(totals.totalRevenue)}</p>
+                <p className="text-blue-700">Total Costs: {formatTZS(totals.totalCosts)}</p>
+                <p className="text-blue-700">Net Profit: {formatTZS(totals.netProfit)}</p>
+                <p className="text-blue-700">Profit Margin: {totals.totalRevenue > 0 ? `${((totals.netProfit / totals.totalRevenue) * 100).toFixed(2)}%` : '0%'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default App;
